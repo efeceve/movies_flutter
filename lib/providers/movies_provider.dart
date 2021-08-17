@@ -6,36 +6,32 @@ class MoviesProvider extends ChangeNotifier {
   String _apiKey = 'de42f61a2957073834a773527b54f57b';
   String _baseURL = 'api.themoviedb.org';
   String _language = 'es_ES';
+  int _popularPage = 0;
   List<Movie> onDisplayMovies = [];
   List<Movie> popularMovies = [];
   MoviesProvider() {
-    print('MoviesProvider Inicializado');
     this.getOnDisplayMovies();
     this.getPopularMovies();
   }
 
-  getOnDisplayMovies() async {
-    var url = Uri.https(_baseURL, '3/movie/now_playing',
-        {'api_key': _apiKey, 'language': _language, 'page': '1'});
-
-    // Await the http get response, then decode the json-formatted response.
+  Future<String> _getJsonData(String endpoint, [int page = 1]) async {
+    var url = Uri.https(_baseURL, endpoint,
+        {'api_key': _apiKey, 'language': _language, 'page': '$page'});
     final response = await http.get(url);
-    //if (response.statusCode != 200) return print('Error');
-    final nowPlayingResponse = NowPlayingResponse.fromJson(response.body);
-    //print(nowPlayingResponse.results[0].title);
+    return response.body;
+  }
+
+  getOnDisplayMovies() async {
+    final jsonData = await this._getJsonData('3/movie/now_playing');
+    final nowPlayingResponse = NowPlayingResponse.fromJson(jsonData);
     onDisplayMovies = nowPlayingResponse.results;
     notifyListeners();
   }
 
   getPopularMovies() async {
-    var url = Uri.https(_baseURL, '3/movie/popular',
-        {'api_key': _apiKey, 'language': _language, 'page': '1'});
-
-    // Await the http get response, then decode the json-formatted response.
-    final response = await http.get(url);
-    //if (response.statusCode != 200) return print('Error');
-    final popularResponse = PopularResponse.fromJson(response.body);
-    //print(nowPlayingResponse.results[0].title);
+    _popularPage++;
+    final jsonData = await this._getJsonData('3/movie/popular', _popularPage);
+    final popularResponse = PopularResponse.fromJson(jsonData);
     popularMovies = [...popularMovies, ...popularResponse.results];
     print(popularMovies[0]);
     notifyListeners();
